@@ -1,10 +1,13 @@
+from typing import Text
 import numpy
+import os
 
 
 def viterbi(observed_values,
             transition_probabilities,
             emission_probabilities,
             initial_distribution,
+            file_name,
             log=True):
     """Calculates the viterbi-path for a given hidden-markov-model, heavily
     inspired by Abhisek Janas Blogpost "Implement Viterbi Algorithm in Hidden
@@ -24,17 +27,37 @@ def viterbi(observed_values,
     Returns:
         (np.array): the viterbi-path for the given hidden-markov-model
     """
+
+    # Anzahl der Schritte
     epochs = observed_values.shape[0]
+
+    # Zustände, hier Gezinkt(unfaior) und ungekzinkt(fair)
     states = transition_probabilities.shape[0]
 
-    omega = numpy.zeros((epochs, states), dtype=numpy.float32)
-    prev = numpy.zeros((epochs - 1, states), dtype=numpy.float32)
+    # Höchste wahrscheinlichkeit um in zustand zu enden
+    omega = numpy.zeros((epochs, states), dtype=numpy.longdouble)
+
+    # 
+    prev = numpy.zeros((epochs - 1, states), dtype=numpy.longdouble)
+
+    # Two Dimensional Array, which holds all forward probability for every state and epoch
+    forward_probs = numpy.zeros((epochs, states), dtype=numpy.longdouble)
+
+    # Two Dimensional Array, which holds all backword probability for every state and epoch
+    backward_probs = numpy.zeros((epochs, states), dtype=numpy.longdouble)
+   
+    # Since we start at the pack of the list we need to init it with a one, instead of a zero
+    backward_probs[epochs - 1] = numpy.ones((states))
+    
+    # Two Dimensional Array, which holds all posteriori probability for every state and epoch
+    posteriori_probs = numpy.zeros((epochs, states), dtype=numpy.longdouble)
 
     # Calculation of the probability for the observed initial state
     if log:
         omega[0, :] = numpy.log(initial_distribution * emission_probabilities[:, observed_values[0]-1]) #noqa
     else:
         omega[0, :] = initial_distribution * emission_probabilities[:, observed_values[0]-1] #noqa
+        forward_probs[0, :] = initial_distribution * emission_probabilities[:,observed_values[0]-1]
 
     for epoch in range(1, epochs):
         for state in range(1, -1, -1):
@@ -56,9 +79,13 @@ def viterbi(observed_values,
             # save probability of the most probable state
             omega[epoch, state] = numpy.max(probability)
 
+            # Posteriori-Decoding, calculate forward probabilitys.
+            # The sum of the equations is calculated with matrix multiplication(.dot), since that way a generice implementation is provided!
+            if not log:
+                forward_probs[epoch, state] = emission_probabilities[state, observed_values[epoch]-1] * forward_probs[epoch - 1].dot(transition_probabilities[:, state])
+
     # Path Array
     path = numpy.zeros(epochs)
-
     # Find the most probable last hidden state
     last_state = numpy.argmax(omega[epochs - 1, :]).astype(int)
 
@@ -76,8 +103,20 @@ def viterbi(observed_values,
         last_state = next_hidden.astype(int)
         backtrack_index += 1
 
+        # Posteriori-Decoding, calculate backward probabilitys.
+        # The sum of the equations is calculated with matrix multiplication(.dot), since that way a generice implementation is provided!
+        # The results are at this point in the wring order, since we start do calculate them from behind!
+        if not log:
+            for state in range(states):
+                backward_probs[i, state] = (backward_probs[i+1]*emission_probabilities[:,observed_values[i]-1]).dot(transition_probabilities[state,:])
+          
+   
+
+
     # Flip the path array since we were backtracking
     path = numpy.flip(path, axis=0)
+
+
 
     # Convert numeric values to actual hidden states
     result = ""
@@ -86,5 +125,30 @@ def viterbi(observed_values,
             result = result + "F"
         else:
             result = result + "L"
+    
+    # Posteriori-Decoding, calculate posteriori probabilitys.
+    if not log:
+            # flip the backward propabilitys to provide the probabilitys in the right order
+            backward_probs = numpy.flip(backward_probs, axis=0)
+            increase = 1
+            for i in range(epochs):
+                # A counter to manage the constant multiplication used
+                if(i%20 == 0):
+                    # increase the multiplikation faktor
+                    increase *= numpy.longdouble(10**5)
+                
+                # Calculate the posteriori probability based on the given algorithm
+                posteriori_probs[i,:] =((forward_probs[i,:]*increase) * (backward_probs[i,:]*increase)) / (numpy.max(omega[epochs-1, :])*increase)
+
+                # Remove the constant faktor and override the current posteriori probability, to give a correct value
+                posteriori_probs[i,:] =posteriori_probs[i,:] / increase
+                
+                dirName = "results\\posteriori-decoding"+file_name
+                numpy.savetxt(dirName,posteriori_probs)
+    
+    dirName = "results\\viterbi-Path"+file_name
+    text_file = open(dirName, "w")
+    text_file.write(result)
+    text_file.close()
 
     return result
