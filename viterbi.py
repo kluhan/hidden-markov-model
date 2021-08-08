@@ -56,7 +56,6 @@ def viterbi(observed_values,
             # save probability of the most probable state
             omega[epoch, state] = numpy.max(probability)
 
-    print(prev)
     # Path Array
     path = numpy.zeros(epochs)
 
