@@ -6,7 +6,9 @@ States, transition and emission probability are loaded from corresponding files 
 
 It is possible to calculate on the native scale as well as on the logarithmic projection.
 
-## Experiment 1 - log vs native
+## Exercise 1
+
+### Experiment 1 - log vs native
 
 While from a purely mathematical point of view the application of the logarithm should have no influence on the result, experiments have shown that it has a considerable influence on the result.
 
@@ -14,30 +16,30 @@ This is probably due to the lossy representation of floating point numbers. We a
 
 For more information on this topic, see the keyword [Range and precision of fractional numbers](https://isaaccomputerscience.org/concepts/data_numbases_range_precision).
 
-## Experiment 2 - reverse-input-list
+### Experiment 2 - reverse-input-list
 
 If the input sequence is mirrored, the first trivial assumption is that the output sequence of the Vertibi algorithm would also be mirrored, but that there would be no structural differences to the first example.
 
-However, when the experiment is carried out, the result is completely different. At this point we assume the reason for this behaviour is the lossy representation of the glide comma numbers mentioned earlier.
+However, when the experiment is carried out, the result is completely different. At this point we assume the reason for this behavior is the lossy representation of the glide comma numbers mentioned earlier.
 
-This assumption also suggests that when using the logarithmic projection, an result can be observed that is closer to the original result. This behaviour was also confirmed by further experiments.
+This assumption also suggests that when using the logarithmic projection, an result can be observed that is closer to the original result. This behavior was also confirmed by further experiments.
 
-## Experiment 3 - reverse of state-loop
+### Experiment 3 - reverse of state-loop
 
 Changing the loop to find the maximum should in principle have no effect on the result, since all results are calculated regardless of the order. No changes could be found in the experiments performed.
 
 
 
-# Exercies 2
+## Exercise 2
 
-## a 
+### a 
 The results are shown in the file posteriori-decoding-noLog
 
-## b
+### b
 Naively the guess is that the results differ from one another. After executing the algorithm 
 Naively one would guess that the results differ from one another, but lastly they dont. This makes sense, since every calculated value is added to one big value. Since in the algorithm the only operations used are addition and multiplication, it doesnt matter when those values are added, hence the result is the same!
 Lastly the results are shown in the file posteriori-decoding-noLog and posteriori-decoding-noLog-reversed.
 
-## b
-### Viterbi
-### Posteriori-Decodierung
+### b
+#### Viterbi
+#### Posteriori-Decodierung
