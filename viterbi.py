@@ -2,8 +2,8 @@ import numpy
 
 
 def viterbi(observed_values,
-            transition_probabilities,
-            emission_probabilities,
+            transition_probabilities_input,
+            emission_probabilities_input,
             initial_distribution,
             file_name,
             log=True):
@@ -26,6 +26,8 @@ def viterbi(observed_values,
         (np.array): the viterbi-path for the given hidden-markov-model
     """
 
+    transition_probabilities= numpy.copy(transition_probabilities_input)
+    emission_probabilities = numpy.copy(emission_probabilities_input)
     # Amount of steps
     epochs = observed_values.shape[0]
 
@@ -55,6 +57,14 @@ def viterbi(observed_values,
     # Calculation of the probability for the observed initial state
     if log:
         omega[0, :] = numpy.log(initial_distribution * emission_probabilities[:, observed_values[0]-1]) #noqa
+        with numpy.nditer(transition_probabilities, op_flags=['readwrite']) as it:
+            for x in it:
+                x[...] = numpy.log(x)
+        with numpy.nditer(emission_probabilities, op_flags=['readwrite']) as it:
+            for x in it:
+                x[...] = numpy.log(x)
+        x = transition_probabilities
+        x = emission_probabilities
     else:
         omega[0, :] = initial_distribution * emission_probabilities[:, observed_values[0]-1] #noqa
         forward_probs[0, :] = initial_distribution * emission_probabilities[:, observed_values[0]-1] #noqa
@@ -66,19 +76,18 @@ def viterbi(observed_values,
             # each possible transition.
             if log:
                 probability = omega[epoch - 1] + \
-                    numpy.log(transition_probabilities[:, state]) + \
-                    numpy.log(emission_probabilities[state, observed_values[epoch]-1]) #noqa
+                    transition_probabilities[:, state]
+                omega[epoch, state] = numpy.max(probability) + emission_probabilities[state, observed_values[epoch]-1]
             else:
                 probability = omega[epoch - 1] * \
-                    transition_probabilities[:, state] * \
-                    emission_probabilities[state, observed_values[epoch]-1]
+                    transition_probabilities[:, state]
+                omega[epoch, state] = numpy.max(probability) * emission_probabilities[state, observed_values[epoch]-1]
 
-            # This is our most probable state given previous state at epoch
             prev[epoch - 1, state] = numpy.argmax(probability)
 
-            # save probability of the most probable state
-            omega[epoch, state] = numpy.max(probability)
+            # This is our most probable state given previous state at epoch
 
+            # save probability of the most probable state
             # Calculate forward probability's for Posteriori-Decoding
             # The sum of the equations is calculated with matrix
             # multiplication(.dot), since that way a generice implementation
@@ -147,9 +156,9 @@ def viterbi(observed_values,
 
             numpy.savetxt("results\\posteriori-decoding"+file_name, posteriori_probs) #noqa
 
-        dirName = "results\\viterbi-Path"+file_name
-        text_file = open(dirName, "w")
-        text_file.write(result)
-        text_file.close()
+    dirName = "results\\viterbi-Path"+file_name
+    text_file = open(dirName, "w")
+    text_file.write(result)
+    text_file.close()
 
     return result

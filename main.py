@@ -26,11 +26,11 @@ _ = viterbi(observed_values,
             emission_probabilities,
             initial_distribution,
             "log",
-            log=True)
+            )
 
 _ = viterbi(backward_observed_values,
             transition_probabilities,
             emission_probabilities,
             initial_distribution,
             "log-reversed",
-            log=True)
+            )
